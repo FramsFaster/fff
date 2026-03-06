@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Цветок</title>
+    <title>Цветок за курсором</title>
     <style>
         body {
             margin: 0;
@@ -36,7 +36,7 @@
             padding: 30px;
             border-radius: 20px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-            z-index: 1;
+            z-index: 2;
             position: relative;
         }
 
@@ -60,49 +60,70 @@
 
         .flower {
             position: absolute;
-            display: none;
-            width: 200px;
-            height: 200px;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            transition: opacity 0.5s ease;
-            z-index: 2;
+            top: -500px; /* изначально вне экрана */
+            left: -500px;
+            width: 120px;
+            height: 120px;
+            pointer-events: none; /* чтобы не мешал кликам */
+            transition: 
+                transform 0.3s cubic-bezier(0.3, 0.7, 0.4, 1);
+            z-index: 3;
+            opacity: 0;
         }
 
-        .flower.show {
+        .flower.visible {
+            opacity: 1;
+        }
+
+        .flower img {
+            width: 100%;
+            height: 100%;
             display: block;
-            animation: rotate 4s linear infinite;
+            transition: all 0.3s ease;
         }
 
-        @keyframes rotate {
-            from { transform: translate(-50%, -50%) rotate(0deg); }
-            to { transform: translate(-50%, -50%) rotate(360deg); }
+        .flower img:hover {
+            transform: scale(1.1);
         }
     </style>
 </head>
 <body>
-    <!-- Полупрозрачный оверлей для читаемости -->
     <div class="overlay"></div>
 
-    <!-- Аудио фон (цикличное) -->
+    <!-- Аудио фон -->
     <audio autoplay loop volume="0.3">
         <source src="audio.mp3" type="audio/mpeg">
     </audio>
 
     <div class="container">
-        <button onclick="showFlower(event)">🌿 Показать цветок</button>
+        <button id="showFlowerBtn">🌸 Показать цветок</button>
     </div>
 
-    <img id="flowerImg" class="flower" src="flower.png" alt="Цветок">
+    <div id="flower" class="flower">
+        <img src="flower.png" alt="Цветок">
+    </div>
 
     <script>
-        function showFlower(event) {
-            const flower = document.getElementById('flowerImg');
-            const button = event.target;
-            flower.classList.add('show');
+        const button = document.getElementById('showFlowerBtn');
+        const flower = document.getElementById('flower');
+
+        let folloverEnabled = false;
+
+        button.addEventListener('click', () => {
+            folloverEnabled = true;
+            flower.classList.add('visible');
             button.style.display = 'none';
-        }
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!folloverEnabled) return;
+
+            const x = e.clientX;
+            const y = e.clientY;
+
+            // плавное движение через transform
+            flower.style.transform = `translate(${x - 60}px, ${y - 80}px)`;
+        });
     </script>
 </body>
 </html>
