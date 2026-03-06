@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Цветок за курсором</title>
+    <title>Цветок на кончике курсора</title>
     <style>
         body {
             margin: 0;
@@ -48,7 +48,6 @@
             border-radius: 50px;
             cursor: pointer;
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
-            transition: all 0.3s ease;
         }
 
         button:hover {
@@ -59,6 +58,8 @@
 
         .flower {
             position: absolute;
+            top: 0;
+            left: 0;
             width: 32px;
             height: 32px;
             pointer-events: none;
@@ -102,19 +103,15 @@
     let flowerX = 0;
     let flowerY = 0;
 
-    let targetX = 0;
-    let targetY = 0;
-
-    const followSpeed = 0.2;       // чем меньше — тем плавнее
-    const minimalStep = 0.01;      // минимум "движения", чтобы не замирал совсем
+    const followSpeed = 0.2;
 
     button.addEventListener('click', () => {
         folloverEnabled = true;
         flower.classList.add('visible');
 
         const rect = flower.getBoundingClientRect();
-        flowerX = window.innerWidth / 2 - rect.width / 2;
-        flowerY = window.innerHeight / 2 - rect.height / 2;
+        flowerX = window.innerWidth / 2;
+        flowerY = window.innerHeight / 2;
         updateFlower();
 
         button.style.display = 'none';
@@ -123,27 +120,18 @@
     document.addEventListener('mousemove', (e) => {
         if (!folloverEnabled) return;
 
-        // НОВАЯ ЦЕЛЬ = кончик курсора
-        targetX = e.clientX - 16; // 32 / 2
-        targetY = e.clientY - 16;
+        // ПОЗИЦИЯ КОНЧИКА КУРСОРА
+        const targetX = e.clientX - 16; // 16 = половина 32×32
+        const targetY = e.clientY - 16;
+
+        // Плавное движение к кончику курсора
+        flowerX += (targetX - flowerX) * followSpeed;
+        flowerY += (targetY - flowerY) * followSpeed;
+
+        updateFlower();
     });
 
     function updateFlower() {
-        if (!folloverEnabled) return;
-
-        // Плавное движение: всегда чутка приближаемся к цели
-        let dx = targetX - flowerX;
-        let dy = targetY - flowerY;
-
-        // Если расстояние очень маленькое, всё равно даём минимальный импульс
-        if (Math.abs(dx) < minimalStep && Math.abs(dy) < minimalStep) {
-            dx = Math.sign(dx) * minimalStep;
-            dy = Math.sign(dy) * minimalStep;
-        }
-
-        flowerX += dx * followSpeed;
-        flowerY += dy * followSpeed;
-
         flower.style.transform = `translate(${Math.round(flowerX)}px, ${Math.round(flowerY)}px)`;
         requestAnimationFrame(updateFlower);
     }
