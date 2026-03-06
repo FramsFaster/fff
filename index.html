@@ -3,82 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Цветок на кончике курсора</title>
+    <title>Цветок за курсором</title>
     <style>
-    body {
-        margin: 0;
-        padding: 0;
-        height: 100vh;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        font-family: Arial, sans-serif;
-        overflow: hidden;
-        position: relative;
-        background-image: url('BG.jpg');
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
-    }
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+            position: relative;
+            background-image: url('BG.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
 
-    .overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.3);
-    }
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.3);
+        }
 
-    .container {
-        text-align: center;
-        background: rgba(255, 255, 255, 0.95);
-        padding: 30px;
-        border-radius: 20px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-        z-index: 2;
-        position: relative;
-    }
+        .container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            z-index: 2;
+        }
 
-    button {
-        padding: 15px 30px;
-        font-size: 18px;
-        background: rgba(76, 175, 80, 0.9);
-        color: white;
-        border: none;
-        border-radius: 50px;
-        cursor: pointer;
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
-        transition: all 0.3s ease;
-    }
+        button {
+            padding: 15px 30px;
+            font-size: 18px;
+            background: rgba(76, 175, 80, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
 
-    button:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.3);
-        background: rgba(76, 175, 80, 1);
-    }
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.3);
+            background: rgba(76, 175, 80, 1);
+        }
 
-    .flower {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 32px;
-        height: 32px;
-        pointer-events: none;
-        z-index: 3;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-    }
+        .flower {
+            position: absolute;
+            width: 32px;
+            height: 32px;
+            pointer-events: none;
+            z-index: 3;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
 
-    .flower.visible {
-        opacity: 1;
-    }
+        .flower.visible {
+            opacity: 1;
+        }
 
-    .flower img {
-        width: 100%;
-        height: 100%;
-        display: block;
-    }
+        .flower img {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -102,18 +99,22 @@
 
     let folloverEnabled = false;
 
-    let flowerX = 0; // текущая позиция
+    let flowerX = 0;
     let flowerY = 0;
 
-    const followSpeed = 0.2; // плавность следования
+    let targetX = 0;
+    let targetY = 0;
+
+    const followSpeed = 0.2;       // чем меньше — тем плавнее
+    const minimalStep = 0.01;      // минимум "движения", чтобы не замирал совсем
 
     button.addEventListener('click', () => {
         folloverEnabled = true;
         flower.classList.add('visible');
 
-        // ставим цветок в центр, оттуда он надолго не останется
-        flowerX = window.innerWidth / 2;
-        flowerY = window.innerHeight / 2;
+        const rect = flower.getBoundingClientRect();
+        flowerX = window.innerWidth / 2 - rect.width / 2;
+        flowerY = window.innerHeight / 2 - rect.height / 2;
         updateFlower();
 
         button.style.display = 'none';
@@ -122,27 +123,36 @@
     document.addEventListener('mousemove', (e) => {
         if (!folloverEnabled) return;
 
-        // ПОЗИЦИЯ КОНЧИКА КУРСОРА
-        // Для стандартного стрелочного курсора кончик примерно на X+0, Y+0 относительно event.clientX/Y
-        // Если используешь другой курсор, смещай здесь
-        const targetX = e.clientX;
-        const targetY = e.clientY;
-
-        // ПЛАВНОЕ ДВИЖЕНИЕ К ЭТОЙ ПОЗИЦИИ
-        flowerX += (targetX - flowerX) * followSpeed;
-        flowerY += (targetY - flowerY) * followSpeed;
-
-        updateFlower();
+        // НОВАЯ ЦЕЛЬ = кончик курсора
+        targetX = e.clientX - 16; // 32 / 2
+        targetY = e.clientY - 16;
     });
 
     function updateFlower() {
-        // цветок будет на самом кончике курсора,
-        // если его размер такой маленький (32×32) и прицел — в центре
-        // если хочешь, чтобы центр цветка был ровно в кончике, тогда:
-        flower.style.transform = `translate(${Math.round(flowerX - 16)}px, ${Math.round(flowerY - 16)}px)`;
-        // 16 = половина ширины/высоты цветка (32 / 2)
-        // если поменяешь размер цветка, меняй и это смещение
+        if (!folloverEnabled) return;
+
+        // Плавное движение: всегда чутка приближаемся к цели
+        let dx = targetX - flowerX;
+        let dy = targetY - flowerY;
+
+        // Если расстояние очень маленькое, всё равно даём минимальный импульс
+        if (Math.abs(dx) < minimalStep && Math.abs(dy) < minimalStep) {
+            dx = Math.sign(dx) * minimalStep;
+            dy = Math.sign(dy) * minimalStep;
+        }
+
+        flowerX += dx * followSpeed;
+        flowerY += dy * followSpeed;
+
+        flower.style.transform = `translate(${Math.round(flowerX)}px, ${Math.round(flowerY)}px)`;
+        requestAnimationFrame(updateFlower);
     }
+
+    // Запуск анимации после нажатия
+    button.addEventListener('click', () => {
+        folloverEnabled = true;
+        updateFlower();
+    });
 </script>
 </body>
 </html>
