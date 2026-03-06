@@ -62,13 +62,12 @@
             position: absolute;
             top: -500px; /* изначально вне экрана */
             left: -500px;
-            width: 120px;
-            height: 120px;
+            width: 100px;
+            height: 100px;
             pointer-events: none; /* чтобы не мешал кликам */
-            transition: 
-                transform 0.3s cubic-bezier(0.3, 0.7, 0.4, 1);
             z-index: 3;
             opacity: 0;
+            transition: opacity 0.3s ease;
         }
 
         .flower.visible {
@@ -79,18 +78,12 @@
             width: 100%;
             height: 100%;
             display: block;
-            transition: all 0.3s ease;
-        }
-
-        .flower img:hover {
-            transform: scale(1.1);
         }
     </style>
 </head>
 <body>
     <div class="overlay"></div>
 
-    <!-- Аудио фон -->
     <audio autoplay loop volume="0.3">
         <source src="audio.mp3" type="audio/mpeg">
     </audio>
@@ -108,22 +101,44 @@
         const flower = document.getElementById('flower');
 
         let folloverEnabled = false;
+        let isAnimating = false;
+
+        // текущая позиция цветка
+        let flowerX = 0;
+        let flowerY = 0;
+
+        // скорость "догоняния" курсора (меньше = плавнее, больше = ближе к мгновенному)
+        const followSpeed = 0.15;
 
         button.addEventListener('click', () => {
             folloverEnabled = true;
             flower.classList.add('visible');
+
+            // ставим цветок в центр, оттуда он будет плавно двигаться к курсору
+            const rect = flower.getBoundingClientRect();
+            flowerX = window.innerWidth / 2 - rect.width / 2;
+            flowerY = window.innerHeight / 2 - rect.height / 2;
+            updateFlower();
+
             button.style.display = 'none';
         });
 
         document.addEventListener('mousemove', (e) => {
             if (!folloverEnabled) return;
 
-            const x = e.clientX;
-            const y = e.clientY;
+            const targetX = e.clientX - 50; // 50 = половина ширины цветка
+            const targetY = e.clientY - 60; // 60 ≈ немного выше кончика курсора по высоте
 
-            // плавное движение через transform
-            flower.style.transform = `translate(${x - 60}px, ${y - 80}px)`;
+            // плавное "догоняние" позиции курсора
+            flowerX += (targetX - flowerX) * followSpeed;
+            flowerY += (targetY - flowerY) * followSpeed;
+
+            updateFlower();
         });
+
+        function updateFlower() {
+            flower.style.transform = `translate(${Math.round(flowerX)}px, ${Math.round(flowerY)}px)`;
+        }
     </script>
 </body>
 </html>
