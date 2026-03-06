@@ -3,142 +3,146 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Цветок за курсором</title>
+    <title>Цветок на кончике курсора</title>
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-family: Arial, sans-serif;
-            overflow: hidden;
-            position: relative;
-            background-image: url('BG.jpg');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-        }
+    body {
+        margin: 0;
+        padding: 0;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-family: Arial, sans-serif;
+        overflow: hidden;
+        position: relative;
+        background-image: url('BG.jpg');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+    }
 
-        .overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.3);
-        }
+    .overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.3);
+    }
 
-        .container {
-            text-align: center;
-            background: rgba(255, 255, 255, 0.95);
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-            z-index: 2;
-            position: relative;
-        }
+    .container {
+        text-align: center;
+        background: rgba(255, 255, 255, 0.95);
+        padding: 30px;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        z-index: 2;
+        position: relative;
+    }
 
-        button {
-            padding: 15px 30px;
-            font-size: 18px;
-            background: rgba(76, 175, 80, 0.9);
-            color: white;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
-            transition: all 0.3s ease;
-        }
+    button {
+        padding: 15px 30px;
+        font-size: 18px;
+        background: rgba(76, 175, 80, 0.9);
+        color: white;
+        border: none;
+        border-radius: 50px;
+        cursor: pointer;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease;
+    }
 
-        button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.3);
-            background: rgba(76, 175, 80, 1);
-        }
+    button:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.3);
+        background: rgba(76, 175, 80, 1);
+    }
 
-        .flower {
-            position: absolute;
-            top: -500px; /* изначально вне экрана */
-            left: -500px;
-            width: 100px;
-            height: 100px;
-            pointer-events: none; /* чтобы не мешал кликам */
-            z-index: 3;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
+    .flower {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 32px;
+        height: 32px;
+        pointer-events: none;
+        z-index: 3;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
 
-        .flower.visible {
-            opacity: 1;
-        }
+    .flower.visible {
+        opacity: 1;
+    }
 
-        .flower img {
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
+    .flower img {
+        width: 100%;
+        height: 100%;
+        display: block;
+    }
     </style>
 </head>
 <body>
-    <div class="overlay"></div>
+<div class="overlay"></div>
 
-    <audio autoplay loop volume="0.3">
-        <source src="audio.mp3" type="audio/mpeg">
-    </audio>
+<audio autoplay loop volume="0.3">
+    <source src="audio.mp3" type="audio/mpeg">
+</audio>
 
-    <div class="container">
-        <button id="showFlowerBtn">🌸 Показать цветок</button>
-    </div>
+<div class="container">
+    <button id="showFlowerBtn">🌸 Показать цветок</button>
+</div>
 
-    <div id="flower" class="flower">
-        <img src="flower.png" alt="Цветок">
-    </div>
+<div id="flower" class="flower">
+    <img src="flower.png" alt="Цветок">
+</div>
 
-    <script>
-        const button = document.getElementById('showFlowerBtn');
-        const flower = document.getElementById('flower');
+<script>
+    const button = document.getElementById('showFlowerBtn');
+    const flower = document.getElementById('flower');
 
-        let folloverEnabled = false;
-        let isAnimating = false;
+    let folloverEnabled = false;
 
-        // текущая позиция цветка
-        let flowerX = 0;
-        let flowerY = 0;
+    let flowerX = 0; // текущая позиция
+    let flowerY = 0;
 
-        // скорость "догоняния" курсора (меньше = плавнее, больше = ближе к мгновенному)
-        const followSpeed = 0.15;
+    const followSpeed = 0.2; // плавность следования
 
-        button.addEventListener('click', () => {
-            folloverEnabled = true;
-            flower.classList.add('visible');
+    button.addEventListener('click', () => {
+        folloverEnabled = true;
+        flower.classList.add('visible');
 
-            // ставим цветок в центр, оттуда он будет плавно двигаться к курсору
-            const rect = flower.getBoundingClientRect();
-            flowerX = window.innerWidth / 2 - rect.width / 2;
-            flowerY = window.innerHeight / 2 - rect.height / 2;
-            updateFlower();
+        // ставим цветок в центр, оттуда он надолго не останется
+        flowerX = window.innerWidth / 2;
+        flowerY = window.innerHeight / 2;
+        updateFlower();
 
-            button.style.display = 'none';
-        });
+        button.style.display = 'none';
+    });
 
-        document.addEventListener('mousemove', (e) => {
-            if (!folloverEnabled) return;
+    document.addEventListener('mousemove', (e) => {
+        if (!folloverEnabled) return;
 
-            const targetX = e.clientX - 50; // 50 = половина ширины цветка
-            const targetY = e.clientY - 60; // 60 ≈ немного выше кончика курсора по высоте
+        // ПОЗИЦИЯ КОНЧИКА КУРСОРА
+        // Для стандартного стрелочного курсора кончик примерно на X+0, Y+0 относительно event.clientX/Y
+        // Если используешь другой курсор, смещай здесь
+        const targetX = e.clientX;
+        const targetY = e.clientY;
 
-            // плавное "догоняние" позиции курсора
-            flowerX += (targetX - flowerX) * followSpeed;
-            flowerY += (targetY - flowerY) * followSpeed;
+        // ПЛАВНОЕ ДВИЖЕНИЕ К ЭТОЙ ПОЗИЦИИ
+        flowerX += (targetX - flowerX) * followSpeed;
+        flowerY += (targetY - flowerY) * followSpeed;
 
-            updateFlower();
-        });
+        updateFlower();
+    });
 
-        function updateFlower() {
-            flower.style.transform = `translate(${Math.round(flowerX)}px, ${Math.round(flowerY)}px)`;
-        }
-    </script>
+    function updateFlower() {
+        // цветок будет на самом кончике курсора,
+        // если его размер такой маленький (32×32) и прицел — в центре
+        // если хочешь, чтобы центр цветка был ровно в кончике, тогда:
+        flower.style.transform = `translate(${Math.round(flowerX - 16)}px, ${Math.round(flowerY - 16)}px)`;
+        // 16 = половина ширины/высоты цветка (32 / 2)
+        // если поменяешь размер цветка, меняй и это смещение
+    }
+</script>
 </body>
 </html>
