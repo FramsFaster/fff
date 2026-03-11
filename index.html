@@ -3,8 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Цветок на кончике курсора</title>
+    <title>Сайт со своим шрифтом</title>
     <style>
+        /* ЗАГРУЗКА ШРИФТА с локального файла */
+        @font-face {
+            font-family: 'MyFont'; /* любое имя для шрифта */
+            src: url('MyFont.ttf') format('truetype'); /* путь к твоему файлу */
+            /* Если есть несколько форматов, добавь их все: */
+            /* src: url('MyFont.woff2') format('woff2'),
+                  url('MyFont.woff') format('woff'),
+                  url('MyFont.ttf') format('truetype'); */
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap; /* шрифт быстро загрузится */
+        }
+
         body {
             margin: 0;
             padding: 0;
@@ -12,13 +25,12 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            font-family: Arial, sans-serif;
+            font-family: 'MyFont', Arial, sans-serif; /* твой шрифт + запасной */
             overflow: hidden;
             position: relative;
             background-image: url('BG.jpg');
             background-size: cover;
             background-position: center;
-            background-repeat: no-repeat;
         }
 
         .overlay {
@@ -33,10 +45,19 @@
         .container {
             text-align: center;
             background: rgba(255, 255, 255, 0.95);
-            padding: 30px;
+            padding: 40px;
             border-radius: 20px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
             z-index: 2;
+            position: relative;
+            font-family: 'MyFont', Arial, sans-serif;
+        }
+
+        h1 {
+            font-family: 'MyFont', sans-serif;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            color: #4CAF50;
         }
 
         button {
@@ -48,6 +69,8 @@
             border-radius: 50px;
             cursor: pointer;
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            font-family: 'MyFont', Arial, sans-serif;
         }
 
         button:hover {
@@ -55,92 +78,14 @@
             box-shadow: 0 12px 35px rgba(0, 0, 0, 0.3);
             background: rgba(76, 175, 80, 1);
         }
-
-        .flower {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 32px;
-            height: 32px;
-            pointer-events: none;
-            z-index: 3;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .flower.visible {
-            opacity: 1;
-        }
-
-        .flower img {
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
     </style>
 </head>
 <body>
-<div class="overlay"></div>
+    <div class="overlay"></div>
 
-<audio autoplay loop volume="0.3">
-    <source src="audio.mp3" type="audio/mpeg">
-</audio>
-
-<div class="container">
-    <button id="showFlowerBtn">🌸 Показать цветок</button>
-</div>
-
-<div id="flower" class="flower">
-    <img src="flower.png" alt="Цветок">
-</div>
-
-<script>
-    const button = document.getElementById('showFlowerBtn');
-    const flower = document.getElementById('flower');
-
-    let folloverEnabled = false;
-
-    let flowerX = 0;
-    let flowerY = 0;
-
-    const followSpeed = 0.2;
-
-    button.addEventListener('click', () => {
-        folloverEnabled = true;
-        flower.classList.add('visible');
-
-        const rect = flower.getBoundingClientRect();
-        flowerX = window.innerWidth / 2;
-        flowerY = window.innerHeight / 2;
-        updateFlower();
-
-        button.style.display = 'none';
-    });
-
-    document.addEventListener('mousemove', (e) => {
-        if (!folloverEnabled) return;
-
-        // ПОЗИЦИЯ КОНЧИКА КУРСОРА
-        const targetX = e.clientX - 16; // 16 = половина 32×32
-        const targetY = e.clientY - 16;
-
-        // Плавное движение к кончику курсора
-        flowerX += (targetX - flowerX) * followSpeed;
-        flowerY += (targetY - flowerY) * followSpeed;
-
-        updateFlower();
-    });
-
-    function updateFlower() {
-        flower.style.transform = `translate(${Math.round(flowerX)}px, ${Math.round(flowerY)}px)`;
-        requestAnimationFrame(updateFlower);
-    }
-
-    // Запуск анимации после нажатия
-    button.addEventListener('click', () => {
-        folloverEnabled = true;
-        updateFlower();
-    });
-</script>
+    <div class="container">
+        <h1>🌸 Мой шрифт работает!</h1>
+        <button onclick="alert('Шрифт загружен!')">Проверить</button>
+    </div>
 </body>
 </html>
