@@ -5,23 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Сайт со своим шрифтом</title>
     <style>
-        /* ЗАГРУЗКА ШРИФТА с локального файла */
         @font-face {
-            font-family: 'MyFont'; /* любое имя для шрифта */
-            src: url('Chair406.otf') format('opentype'); /* путь к твоему файлу */
+            font-family: 'MyFont';
+            src: url('Chair406.otf') format('opentype');
             font-weight: normal;
             font-style: normal;
-            font-display: swap; /* шрифт быстро загрузится */
+            font-display: swap;
         }
 
         body {
             margin: 0;
             padding: 0;
             height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-family: 'MyFont', Arial, sans-serif; /* твой шрифт + запасной */
+            font-family: 'MyFont', Arial, sans-serif;
             overflow: hidden;
             position: relative;
             background-image: url('BG.jpg');
@@ -35,8 +31,9 @@
             left: 0;
             width: 100%;
             height: 100%;
-            pointer-events: none;
-            z-index: 1;
+            pointer-events: all;
+            z-index: 10;
+            cursor: none;
         }
 
         .overlay {
@@ -55,9 +52,15 @@
             padding: 40px;
             border-radius: 20px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-            z-index: 2;
+            z-index: 20;
             position: relative;
-            font-family: 'MyFont', Arial, sans-serif;
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        .container.hidden {
+            opacity: 0;
+            transform: scale(0.8);
+            pointer-events: none;
         }
 
         h1 {
@@ -91,21 +94,21 @@
     <canvas id="canvas"></canvas>
     <div class="overlay"></div>
 
-    <div class="container">
+    <div class="container" id="container">
         <h1>🌸 123 MY Font шрифт работает!</h1>
-        <button id="startBtn">Запустить игру</button>
+        <button id="startBtn">Играть!</button>
     </div>
 
     <script>
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
+        const container = document.getElementById('container');
         const startBtn = document.getElementById('startBtn');
 
         let mouseX = 0;
         let mouseY = 0;
-        let flowers = []; // след цветка за мышью
-        let dots = []; // собираемые точки
         let gameActive = false;
+        let dots = [];
 
         // Загрузка изображения цветка
         const flowerImg = new Image();
@@ -126,85 +129,73 @@
             mouseY = e.clientY - rect.top;
         });
 
-        class Flower {
-            constructor(x, y) {
-                this.x = x;
-                this.y = y;
-                this.life = 1.0;
+        // Клик мышью для сбора кружков
+        canvas.addEventListener('click', (e) => {
+            if (!gameActive) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top;
+            
+            // Проверяем попадание по кружкам
+            for (let i = dots.length - 1; i >= 0; i--) {
+                const dot = dots[i];
+                const dx = clickX - dot.x;
+                const dy = clickY - dot.y;
+                if (Math.sqrt(dx * dx + dy * dy) < dot.radius) {
+                    dots.splice(i, 1); // Удаляем кружок
+                }
             }
-
-            update() {
-                this.life -= 0.02;
-                return this.life > 0;
-            }
-
-            draw() {
-                ctx.save();
-                ctx.globalAlpha = this.life;
-                ctx.drawImage(flowerImg, this.x - 25, this.y - 25, 50, 50);
-                ctx.restore();
-            }
-        }
+        });
 
         class Dot {
             constructor() {
                 this.x = Math.random() * canvas.width;
                 this.y = Math.random() * canvas.height;
-                this.radius = 15;
-                this.life = 5000; // 5 секунд в мс
+                this.radius = 20;
+                this.life = 5000; // 5 секунд
                 this.maxLife = 5000;
             }
 
             update(dt) {
                 this.life -= dt;
-                this.radius = 15 * (this.life / this.maxLife);
+                this.radius = 20 * (this.life / this.maxLife);
                 return this.life > 0;
             }
 
             draw() {
+                const alpha = this.life / this.maxLife;
                 ctx.save();
-                ctx.globalAlpha = this.life / this.maxLife;
+                ctx.globalAlpha = alpha;
                 ctx.fillStyle = '#FFD700';
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.strokeStyle = '#FFA500';
-                ctx.lineWidth = 2;
+                ctx.lineWidth = 3;
                 ctx.stroke();
                 ctx.restore();
-            }
-
-            checkCollision(mx, my) {
-                const dx = mx - this.x;
-                const dy = my - this.y;
-                return Math.sqrt(dx * dx + dy * dy) < this.radius;
             }
         }
 
         function animate() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Обновление и рисование цветков следа
             if (gameActive) {
-                flowers = flowers.filter(flower => {
-                    flower.update();
-                    flower.draw();
-                    return flower.life > 0;
-                });
-                flowers.unshift(new Flower(mouseX, mouseY));
+                // Рисуем цветок на позиции курсора
+                if (flowerImg.complete) {
+                    ctx.drawImage(flowerImg, mouseX - 25, mouseY - 25, 50, 50);
+                }
 
-                // Проверка сбора точек
+                // Обновляем и рисуем кружки
                 dots = dots.filter(dot => {
-                    if (dot.checkCollision(mouseX, mouseY)) {
-                        return false; // исчезает
-                    }
-                    dot.update(16); // ~60fps
+                    dot.update(16);
                     dot.draw();
-                    return true;
+                    return dot.life > 0;
                 });
 
-                // Добавление новых точек
-                if (Math.random() < 0.1) { // примерно 6 точек в секунду
+                // Добавляем новые кружки
+                if (Math.random() < 0.08) {
                     dots.push(new Dot());
                 }
             }
@@ -212,17 +203,16 @@
             requestAnimationFrame(animate);
         }
 
+        // Обработчик кнопки
         startBtn.addEventListener('click', () => {
-            gameActive = !gameActive;
-            startBtn.textContent = gameActive ? 'Игра активна' : 'Запустить игру';
-            if (gameActive) {
-                // Очистка при старте
-                flowers = [];
-                dots = [];
-            }
+            gameActive = true;
+            container.classList.add('hidden');
+            
+            // Очистка старых кружков
+            dots = [];
         });
 
-        // Ждем загрузки изображения
+        // Запуск анимации после загрузки изображения
         flowerImg.onload = () => {
             animate();
         };
