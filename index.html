@@ -170,11 +170,11 @@
         let mouseX = 0;
         let mouseY = 0;
         let gameActive = false;
-        let gameTime = 60; // 60 секунд
+        let gameTimeLeft = 60; // 60 секунд
         let score = 0;
         let dots = [];
+        let lastTime = 0;
         let gameStartTime = 0;
-        const GAME_DURATION = 60000; // 60 секунд в миллисекундах
 
         // Загрузка изображения цветка
         const flowerImg = new Image();
@@ -212,7 +212,7 @@
                     dots.splice(i, 1);
                     score++;
                     scoreEl.textContent = score;
-                    break; // Только один кружок за клик
+                    break;
                 }
             }
         });
@@ -222,7 +222,7 @@
                 this.x = Math.random() * canvas.width;
                 this.y = Math.random() * canvas.height;
                 this.radius = 20;
-                this.life = 5000;
+                this.life = 5000; // 5 секунд для самих кружков
                 this.maxLife = 5000;
             }
 
@@ -247,17 +247,6 @@
             }
         }
 
-        function updateTimer() {
-            if (!gameActive) return;
-            const elapsed = Date.now() - gameStartTime;
-            const remaining = Math.max(0, Math.ceil((GAME_DURATION - elapsed) / 1000));
-            timerEl.textContent = remaining;
-            
-            if (elapsed >= GAME_DURATION) {
-                endGame();
-            }
-        }
-
         function endGame() {
             gameActive = false;
             finalScoreEl.textContent = score;
@@ -267,36 +256,48 @@
         function startGame() {
             gameActive = true;
             score = 0;
-            gameTime = 60;
+            gameTimeLeft = 60;
             dots = [];
-            gameStartTime = Date.now();
+            gameStartTime = performance.now();
             scoreEl.textContent = '0';
+            timerEl.textContent = '60';
             gameOver.style.display = 'none';
             container.classList.add('hidden');
         }
 
-        function animate() {
+        function animate(currentTime) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const dt = currentTime - lastTime;
+            lastTime = currentTime;
 
             if (gameActive) {
-                // Рисуем цветок на позиции курсора
-                if (flowerImg.complete) {
-                    ctx.drawImage(flowerImg, mouseX - 25, mouseY - 25, 50, 50);
+                // Обновляем таймер
+                const elapsedSeconds = (currentTime - gameStartTime) / 1000;
+                gameTimeLeft = Math.max(0, 60 - elapsedSeconds);
+                timerEl.textContent = Math.ceil(gameTimeLeft);
+
+                // Проверяем окончание игры (ровно 60 секунд)
+                if (gameTimeLeft <= 0) {
+                    endGame();
+                } else {
+                    // Рисуем цветок на позиции курсора
+                    if (flowerImg.complete) {
+                        ctx.drawImage(flowerImg, mouseX - 25, mouseY - 25, 50, 50);
+                    }
+
+                    // Обновляем и рисуем кружки
+                    dots = dots.filter(dot => {
+                        dot.update(dt);
+                        dot.draw();
+                        return dot.life > 0;
+                    });
+
+                    // Добавляем новые кружки
+                    if (Math.random() < 0.1) {
+                        dots.push(new Dot());
+                    }
                 }
-
-                // Обновляем и рисуем кружки
-                dots = dots.filter(dot => {
-                    dot.update(16);
-                    dot.draw();
-                    return dot.life > 0;
-                });
-
-                // Добавляем новые кружки
-                if (Math.random() < 0.1) {
-                    dots.push(new Dot());
-                }
-
-                updateTimer();
             }
 
             requestAnimationFrame(animate);
@@ -311,7 +312,10 @@
 
         // Запуск анимации после загрузки изображения
         flowerImg.onload = () => {
-            animate();
+            requestAnimationFrame((time) => {
+                lastTime = time;
+                animate(time);
+            });
         };
     </script>
 </body>
