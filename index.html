@@ -46,6 +46,52 @@
             z-index: 1;
         }
 
+        .ui {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 20;
+            color: white;
+            font-size: 24px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            font-family: 'MyFont', Arial, sans-serif;
+        }
+
+        .game-over {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(76, 175, 80, 0.95);
+            color: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            z-index: 30;
+            font-family: 'MyFont', Arial, sans-serif;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            display: none;
+        }
+
+        .restart-btn {
+            padding: 15px 30px;
+            font-size: 18px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #4CAF50;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            font-family: 'MyFont', Arial, sans-serif;
+            margin-top: 20px;
+        }
+
+        .restart-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.3);
+        }
+
         .container {
             text-align: center;
             background: rgba(255, 255, 255, 0.95);
@@ -94,9 +140,20 @@
     <canvas id="canvas"></canvas>
     <div class="overlay"></div>
 
+    <div class="ui" id="ui">
+        <div>⏰ <span id="timer">60</span>с</div>
+        <div>⭐ <span id="score">0</span></div>
+    </div>
+
     <div class="container" id="container">
         <h1>🌸 123 MY Font шрифт работает!</h1>
         <button id="startBtn">Играть!</button>
+    </div>
+
+    <div class="game-over" id="gameOver">
+        <h2>Игра окончена!</h2>
+        <div style="font-size: 28px; margin: 20px 0;">Собрано: <span id="finalScore">0</span> ⭐</div>
+        <button class="restart-btn" id="restartBtn">Играть снова</button>
     </div>
 
     <script>
@@ -104,11 +161,20 @@
         const ctx = canvas.getContext('2d');
         const container = document.getElementById('container');
         const startBtn = document.getElementById('startBtn');
+        const gameOver = document.getElementById('gameOver');
+        const timerEl = document.getElementById('timer');
+        const scoreEl = document.getElementById('score');
+        const finalScoreEl = document.getElementById('finalScore');
+        const restartBtn = document.getElementById('restartBtn');
 
         let mouseX = 0;
         let mouseY = 0;
         let gameActive = false;
+        let gameTime = 60; // 60 секунд
+        let score = 0;
         let dots = [];
+        let gameStartTime = 0;
+        const GAME_DURATION = 60000; // 60 секунд в миллисекундах
 
         // Загрузка изображения цветка
         const flowerImg = new Image();
@@ -143,7 +209,10 @@
                 const dx = clickX - dot.x;
                 const dy = clickY - dot.y;
                 if (Math.sqrt(dx * dx + dy * dy) < dot.radius) {
-                    dots.splice(i, 1); // Удаляем кружок
+                    dots.splice(i, 1);
+                    score++;
+                    scoreEl.textContent = score;
+                    break; // Только один кружок за клик
                 }
             }
         });
@@ -153,7 +222,7 @@
                 this.x = Math.random() * canvas.width;
                 this.y = Math.random() * canvas.height;
                 this.radius = 20;
-                this.life = 5000; // 5 секунд
+                this.life = 5000;
                 this.maxLife = 5000;
             }
 
@@ -178,6 +247,34 @@
             }
         }
 
+        function updateTimer() {
+            if (!gameActive) return;
+            const elapsed = Date.now() - gameStartTime;
+            const remaining = Math.max(0, Math.ceil((GAME_DURATION - elapsed) / 1000));
+            timerEl.textContent = remaining;
+            
+            if (elapsed >= GAME_DURATION) {
+                endGame();
+            }
+        }
+
+        function endGame() {
+            gameActive = false;
+            finalScoreEl.textContent = score;
+            gameOver.style.display = 'block';
+        }
+
+        function startGame() {
+            gameActive = true;
+            score = 0;
+            gameTime = 60;
+            dots = [];
+            gameStartTime = Date.now();
+            scoreEl.textContent = '0';
+            gameOver.style.display = 'none';
+            container.classList.add('hidden');
+        }
+
         function animate() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -195,21 +292,21 @@
                 });
 
                 // Добавляем новые кружки
-                if (Math.random() < 0.08) {
+                if (Math.random() < 0.1) {
                     dots.push(new Dot());
                 }
+
+                updateTimer();
             }
 
             requestAnimationFrame(animate);
         }
 
-        // Обработчик кнопки
-        startBtn.addEventListener('click', () => {
-            gameActive = true;
-            container.classList.add('hidden');
-            
-            // Очистка старых кружков
-            dots = [];
+        // Обработчики
+        startBtn.addEventListener('click', startGame);
+        restartBtn.addEventListener('click', () => {
+            gameOver.style.display = 'none';
+            container.classList.remove('hidden');
         });
 
         // Запуск анимации после загрузки изображения
